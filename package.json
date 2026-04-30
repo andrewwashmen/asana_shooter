@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "register-webhook": "node scripts/register-webhook.mjs",
     "list-webhooks": "node scripts/list-webhooks.mjs",
-    "delete-webhook": "node scripts/delete-webhook.mjs"
+    "delete-webhook": "node scripts/delete-webhook.mjs",
+    "test-callback": "node scripts/test-callback.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260101.0",
