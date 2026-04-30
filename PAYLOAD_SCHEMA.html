@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Asana Shooter — Outbound Payload Schema</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #6b6b6b;
+    --rule: #d8d8d8;
+    --accent: #2547d0;
+    --code-bg: #f5f5f7;
+    --required-bg: #fff5e1;
+    --required-border: #f0b45a;
+  }
+  html { font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: var(--ink); }
+  body { max-width: 880px; margin: 32px auto; padding: 0 32px; line-height: 1.5; font-size: 13px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h2 { font-size: 17px; margin: 28px 0 10px; padding-bottom: 4px; border-bottom: 1px solid var(--rule); }
+  h3 { font-size: 14px; margin: 18px 0 8px; color: var(--accent); }
+  p { margin: 8px 0; }
+  .subtitle { color: var(--muted); margin: 0 0 4px; font-size: 13px; }
+  .meta { color: var(--muted); font-size: 11px; margin-top: 6px; }
+  code, pre { font-family: ui-monospace, "SF Mono", Consolas, "Liberation Mono", monospace; font-size: 12px; }
+  pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 4px; padding: 12px 14px; overflow: auto; margin: 8px 0; white-space: pre-wrap; word-break: break-word; }
+  code.inline { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 11.5px; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 11.5px; }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { background: #fafafa; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+  tr.required td { background: var(--required-bg); }
+  tr.required td:first-child::after { content: "  ★ required"; color: #b8800f; font-weight: 600; font-size: 9.5px; letter-spacing: 0.04em; text-transform: uppercase; }
+  td.field { font-family: ui-monospace, Consolas, monospace; white-space: nowrap; font-size: 11.5px; }
+  td.type { font-family: ui-monospace, Consolas, monospace; color: var(--accent); white-space: nowrap; font-size: 11px; }
+  td.example { font-family: ui-monospace, Consolas, monospace; color: #444; font-size: 11px; word-break: break-word; max-width: 280px; }
+  .legend { display: flex; gap: 18px; align-items: center; font-size: 11.5px; margin: 8px 0 12px; color: var(--muted); }
+  .legend .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; margin-right: 6px; vertical-align: -3px; background: var(--required-bg); border: 1px solid var(--required-border); }
+  .footer { margin-top: 36px; padding-top: 12px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 11px; }
+  @media print {
+    body { margin: 0; padding: 18mm; max-width: none; font-size: 11.5pt; }
+    h1 { font-size: 20pt; }
+    h2 { font-size: 13pt; page-break-after: avoid; }
+    h3 { font-size: 11pt; page-break-after: avoid; }
+    pre, table { page-break-inside: avoid; }
+    table { font-size: 9.5pt; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Asana Shooter — Outbound Payload Schema</h1>
+<p class="subtitle">Webhook payload posted to <code class="inline">legacy-order-ingest</code> on every trigger fire.</p>
+<p class="meta">Source: Cloudflare Worker <code class="inline">asana-shooter</code> · Project: ShoeCare Master Board (gid 1202289964354061)</p>
+
+<h2>1. Trigger</h2>
+<p>The Worker fires this payload <strong>once per transition</strong> when the Asana custom field <code class="inline">Assessment System</code> on any task in the project is set to the value <code class="inline">"New"</code> (whitespace-tolerant).</p>
+<p>Edge-triggered: re-firing requires the field to be cleared and re-set. Toggling unrelated fields on the same task does <em>not</em> re-fire.</p>
+
+<h2>2. HTTP request</h2>
+<table>
+  <tr><td class="field">Method</td><td>POST</td></tr>
+  <tr><td class="field">URL</td><td><code class="inline">https://onjhhntixaxumtiildwa.supabase.co/functions/v1/legacy-order-ingest</code></td></tr>
+  <tr><td class="field">Content-Type</td><td><code class="inline">application/json</code></td></tr>
+</table>
+
+<h3>Custom headers</h3>
+<table>
+  <thead><tr><th>Header</th><th>Sample value</th></tr></thead>
+  <tbody>
+    <tr><td class="field">X-Source</td><td class="example">asana-shooter</td></tr>
+    <tr><td class="field">X-Asana-Task-Gid</td><td class="example">1214411768955116</td></tr>
+    <tr><td class="field">X-Trigger-Field</td><td class="example">Assessment System</td></tr>
+    <tr><td class="field">X-Trigger-Value</td><td class="example">New</td></tr>
+  </tbody>
+</table>
+
+<h2>3. Top-level body fields</h2>
+<p class="legend"><span><span class="swatch"></span>highlighted rows are required for the function's validator.</span></p>
+<table>
+  <thead><tr><th>Key</th><th>Type</th><th>Sample</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td class="field">source</td><td class="type">"asana"</td><td class="example">"asana"</td><td>Constant.</td></tr>
+    <tr><td class="field">task_gid</td><td class="type">string</td><td class="example">"1214411768955116"</td><td>Asana task identifier.</td></tr>
+    <tr><td class="field">permalink</td><td class="type">string | null</td><td class="example">https://app.asana.com/1/41091308892039/project/1202289964354061/task/1214411768955116</td><td>URL to the task.</td></tr>
+    <tr><td class="field">fired_at</td><td class="type">string (ISO-8601)</td><td class="example">"2026-04-30T12:43:34.123Z"</td><td>UTC timestamp the Worker emitted the POST.</td></tr>
+    <tr><td class="field">trigger</td><td class="type">object</td><td class="example">{ "field": "Assessment System", "value": "New" }</td><td>Static identifier of what triggered the payload.</td></tr>
+    <tr class="required"><td class="field">order_id</td><td class="type">string | null</td><td class="example">"CVZ472"</td><td>Order alpha ID, parsed from task name segment 1.</td></tr>
+    <tr class="required"><td class="field">items</td><td class="type">Item[] (length 1)</td><td class="example">see Section 4</td><td>One item per Asana task.</td></tr>
+    <tr><td class="field">geofence</td><td class="type">string | null</td><td class="example">"Downtown (NEW - No City Walk)"</td><td>Text inside the first <code class="inline">[...]</code> in the task name.</td></tr>
+    <tr><td class="field">pickup_date</td><td class="type">string | null (YYYY-MM-DD)</td><td class="example">"2026-04-29"</td><td>Parsed from task notes (<code class="inline">Pickup Date:</code>).</td></tr>
+    <tr><td class="field">brand</td><td class="type">string | null</td><td class="example">"Hermes"</td><td>Mirror of <code class="inline">items[0].brand</code>.</td></tr>
+    <tr><td class="field">color</td><td class="type">string | null</td><td class="example">"Beige"</td><td>Mirror of <code class="inline">items[0].color</code>.</td></tr>
+    <tr><td class="field">full_name</td><td class="type">string | null</td><td class="example">"Seif Motawe"</td><td>Customer full name from task name segment 4.</td></tr>
+    <tr><td class="field">shoe_size</td><td class="type">string | null</td><td class="example">"41 EU"</td><td>Size from <code class="inline">Size: …</code> segment of task name.</td></tr>
+    <tr><td class="field">notes</td><td class="type">string | null</td><td class="example">Full raw description text</td><td>Verbatim Asana <code class="inline">notes</code> field.</td></tr>
+    <tr><td class="field">stain_details</td><td class="type">string | null</td><td class="example">null</td><td>Asana value <code class="inline">"None"</code> normalises to <code class="inline">null</code>.</td></tr>
+    <tr><td class="field">damage_details</td><td class="type">string | null</td><td class="example">null</td><td>Same normalisation.</td></tr>
+    <tr><td class="field">customer_instructions</td><td class="type">object</td><td class="example">see Section 5</td><td>Always present. Sub-fields nullable.</td></tr>
+    <tr><td class="field">email</td><td class="type">string | null</td><td class="example">"bactem07@gmail.com"</td><td>From notes <code class="inline">Customer Email:</code>. Falls back to Washmen customer API if not present.</td></tr>
+    <tr><td class="field">tel</td><td class="type">string | null</td><td class="example">"+971586862076"</td><td>From notes <code class="inline">Customer Phone:</code>. Falls back to Washmen customer API.</td></tr>
+    <tr><td class="field">tray_number</td><td class="type">string | null</td><td class="example">"4707"</td><td>From task name <code class="inline">Tray: NNNN</code> prefix.</td></tr>
+    <tr><td class="field">item_code</td><td class="type">string | null</td><td class="example">"260418952286"</td><td>Mirror of <code class="inline">items[0].item_code</code>.</td></tr>
+    <tr><td class="field">before_images_links</td><td class="type">string[]</td><td class="example">["https://pub-...r2.dev/tasks/&lt;gid&gt;/&lt;att-gid&gt;/BEFORE-…jpeg"]</td><td>BEFORE-prefixed attachments, oldest→newest.</td></tr>
+    <tr><td class="field">other_images_links</td><td class="type">string[]</td><td class="example">["https://pub-...r2.dev/tasks/.../Sorter-…jpeg", …]</td><td>All non-BEFORE attachments (Sorter, persisted, etc.), oldest→newest.</td></tr>
+  </tbody>
+</table>
+
+<h2>4. Item schema (<code class="inline">items[]</code>)</h2>
+<pre>{
+  "brand":     string | null,    // "Hermes"
+  "color":     string | null,    // "Beige"
+  "item_code": string | null,    // "260418952286"
+  "item_type": string | null     // "Shoes" | "Bags"
+}</pre>
+<p><code class="inline">item_type</code> is derived from the Asana SERVICE TYPE custom field: <code class="inline">ShoeCare → "Shoes"</code>, <code class="inline">BagCare → "Bags"</code>. Other values pass through unchanged.</p>
+
+<h2>5. Customer instructions schema</h2>
+<pre>{
+  "notes":           string | null,    // "None" → null
+  "callback_status": string | null,    // e.g. "Not Requested"
+  "images":          string | null
+}</pre>
+
+<h2>6. Photo URLs</h2>
+<p>Every link in <code class="inline">before_images_links</code> and <code class="inline">other_images_links</code> points to Cloudflare R2 at <code class="inline">https://pub-e253fc5bb5ec4740bf58f9cc062ed9b3.r2.dev</code>. URLs are permanent (no expiry) — unlike Asana's signed download URLs which expire after ~10 days.</p>
+<p>Path format: <code class="inline">/tasks/&lt;asana_task_gid&gt;/&lt;asana_attachment_gid&gt;/&lt;original_filename&gt;</code>. Filenames are sanitised (non-alphanumeric chars become <code class="inline">_</code>).</p>
+
+<h2>7. Sample full payload</h2>
+<pre>{
+  "source": "asana",
+  "task_gid": "1214411768955116",
+  "permalink": "https://app.asana.com/1/41091308892039/project/1202289964354061/task/1214411768955116",
+  "fired_at": "2026-04-30T12:43:34.123Z",
+  "trigger": { "field": "Assessment System", "value": "New" },
+  "order_id": "CVZ472",
+  "items": [
+    {
+      "brand": "Hermes",
+      "color": "Beige",
+      "item_code": "260418952286",
+      "item_type": "Shoes"
+    }
+  ],
+  "geofence": "Downtown (NEW - No City Walk)",
+  "pickup_date": "2026-04-29",
+  "brand": "Hermes",
+  "color": "Beige",
+  "full_name": "Seif Motawe",
+  "shoe_size": "41 EU",
+  "notes": "  Customer Name:\n  Seif Motawe\n\n  Order Alpha ID:\n  CVZ472\n\n  Pickup Date:\n  2026-04-29\n  …",
+  "stain_details": null,
+  "damage_details": null,
+  "customer_instructions": {
+    "notes": null,
+    "callback_status": "Not Requested",
+    "images": null
+  },
+  "email": null,
+  "tel": null,
+  "tray_number": "4707",
+  "item_code": "260418952286",
+  "before_images_links": [
+    "https://pub-e253fc5bb5ec4740bf58f9cc062ed9b3.r2.dev/tasks/1214411768955116/&lt;att-gid&gt;/BEFORE-….jpeg"
+  ],
+  "other_images_links": [
+    "https://pub-e253fc5bb5ec4740bf58f9cc062ed9b3.r2.dev/tasks/1214411768955116/&lt;att-gid&gt;/Sorter-….jpeg"
+  ]
+}</pre>
+
+<h2>8. Field-origin reference</h2>
+<table>
+  <thead><tr><th>Payload key</th><th>Source</th></tr></thead>
+  <tbody>
+    <tr><td class="field">order_id</td><td>Task name, segment 1 after <code class="inline">[geofence]</code></td></tr>
+    <tr><td class="field">items[0].brand</td><td>Task name, segment 2</td></tr>
+    <tr><td class="field">items[0].color</td><td>Task name, segment 5</td></tr>
+    <tr><td class="field">items[0].item_code</td><td>Task notes, line under <code class="inline">Item Code:</code></td></tr>
+    <tr><td class="field">items[0].item_type</td><td>Custom field SERVICE TYPE, mapped</td></tr>
+    <tr><td class="field">geofence</td><td>Task name, first <code class="inline">[…]</code></td></tr>
+    <tr><td class="field">tray_number</td><td>Task name, <code class="inline">Tray: NNNN</code> prefix</td></tr>
+    <tr><td class="field">full_name</td><td>Task name, segment 4</td></tr>
+    <tr><td class="field">shoe_size</td><td>Task name, <code class="inline">Size: …</code> segment</td></tr>
+    <tr><td class="field">pickup_date</td><td>Task notes, line under <code class="inline">Pickup Date:</code></td></tr>
+    <tr><td class="field">stain_details / damage_details</td><td>Task notes, labelled blocks (<code class="inline">"None"</code> → null)</td></tr>
+    <tr><td class="field">customer_instructions.*</td><td>Task notes, <code class="inline">Customer Instructions:</code> sub-block</td></tr>
+    <tr><td class="field">email</td><td>Task notes, line under <code class="inline">Customer Email:</code>; falls back to Washmen API by UUID from notes.</td></tr>
+    <tr><td class="field">tel</td><td>Task notes, line under <code class="inline">Customer Phone:</code>; falls back to Washmen API.</td></tr>
+    <tr><td class="field">before_images_links</td><td>Asana attachments named <code class="inline">BEFORE-*</code>, rehosted to R2</td></tr>
+    <tr><td class="field">other_images_links</td><td>All other attachments, rehosted to R2</td></tr>
+  </tbody>
+</table>
+
+<h2>9. Operational notes</h2>
+<ul>
+  <li>If validation on the destination function returns non-2xx, the Worker logs the error and the trigger state remains uncommitted in KV. The next Asana event for that task will retry the destination POST automatically.</li>
+  <li>Photo URL format depends on R2 public access via <code class="inline">https://pub-e253fc5bb5ec4740bf58f9cc062ed9b3.r2.dev</code>. If you switch to a custom domain later, all <code class="inline">*_images_links</code> values change — coordinate with Lovable beforehand.</li>
+  <li>The full <code class="inline">notes</code> field is included verbatim. Downstream may parse it for additional fields not promoted to the top level (e.g. Auto Approval, Shoe Assessment).</li>
+  <li>Garbage upstream values <code class="inline">"None"</code>, <code class="inline">"none"</code>, <code class="inline">"N/A"</code>, <code class="inline">"null"</code>, <code class="inline">"undefined"</code>, and <code class="inline">"-"</code> are normalised to JSON <code class="inline">null</code> on every extracted field.</li>
+  <li>Task name segment 5 may contain either <code class="inline">"Size: 44 EU"</code> (older format) or just <code class="inline">"44 EU"</code> (newer format). The parser handles both. If neither is present in the name, <code class="inline">shoe_size</code> falls back to the notes <code class="inline">Size:</code> label.</li>
+</ul>
+
+<div class="footer">Generated 2026-04-30 · Source: <code class="inline">src/types.ts</code> + <code class="inline">src/transform.ts</code> in the <code class="inline">asana-shooter</code> repo.</div>
+
+</body>
+</html>

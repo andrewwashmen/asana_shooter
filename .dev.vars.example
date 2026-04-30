@@ -1,0 +1,3 @@
+# Copy to .dev.vars for `wrangler dev`. Production secrets go via `wrangler secret put`.
+ASANA_PAT=
+DESTINATION_WEBHOOK_URL=https://webhook.site/cc9beae3-a733-4da8-9daa-5e8b136fb0cf

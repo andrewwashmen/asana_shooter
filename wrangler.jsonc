@@ -1,0 +1,32 @@
+{
+	"$schema": "https://unpkg.com/wrangler/config-schema.json",
+	"name": "asana-shooter",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-04-24",
+	// KV stores: X-Hook-Secret per webhook + per-task edge-trigger state.
+	"kv_namespaces": [
+		{
+			"binding": "STATE",
+			"id": "d7eeb693e6b84598a5c07bb1a9f81b1f"
+		}
+	],
+	// R2 bucket for rehosting Asana attachments (durable, no 10-day expiry).
+	"r2_buckets": [
+		{
+			"binding": "PHOTOS",
+			"bucket_name": "asana-shooter-photos"
+		}
+	],
+	"vars": {
+		"ASANA_PROJECT_GID": "1202289964354061",
+		"TRIGGER_FIELD_NAME": "Assessment System",
+		"TRIGGER_FIELD_VALUE": "New",
+		"R2_PUBLIC_BASE_URL": "https://pub-e253fc5bb5ec4740bf58f9cc062ed9b3.r2.dev"
+	},
+	// Secrets (set with `wrangler secret put <NAME>`):
+	//   ASANA_PAT               - Personal Access Token from Asana developer console
+	//   DESTINATION_WEBHOOK_URL - Where to POST the enriched task payload
+	"observability": {
+		"enabled": true
+	}
+}
