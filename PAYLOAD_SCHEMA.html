@@ -80,7 +80,8 @@
   <tbody>
     <tr><td class="field">source</td><td class="type">"asana"</td><td class="example">"asana"</td><td>Constant.</td></tr>
     <tr><td class="field">task_gid</td><td class="type">string</td><td class="example">"1214411768955116"</td><td>Asana task identifier.</td></tr>
-    <tr><td class="field">permalink</td><td class="type">string | null</td><td class="example">https://app.asana.com/1/41091308892039/project/1202289964354061/task/1214411768955116</td><td>URL to the task.</td></tr>
+    <tr><td class="field">ASANA</td><td class="type">string | null</td><td class="example">https://app.asana.com/1/41091308892039/project/1202289964354061/task/1214411768955116</td><td>Direct URL to the Asana task.</td></tr>
+    <tr><td class="field">permalink</td><td class="type">string | null</td><td class="example">https://app.asana.com/1/.../task/1214411768955116</td><td>Same value as <code class="inline">ASANA</code>; kept for backwards compatibility.</td></tr>
     <tr><td class="field">fired_at</td><td class="type">string (ISO-8601)</td><td class="example">"2026-04-30T12:43:34.123Z"</td><td>UTC timestamp the Worker emitted the POST.</td></tr>
     <tr><td class="field">trigger</td><td class="type">object</td><td class="example">{ "field": "Assessment System", "value": "New" }</td><td>Static identifier of what triggered the payload.</td></tr>
     <tr class="required"><td class="field">order_id</td><td class="type">string | null</td><td class="example">"CVZ472"</td><td>Order alpha ID, parsed from task name segment 1.</td></tr>
@@ -128,6 +129,7 @@
 <pre>{
   "source": "asana",
   "task_gid": "1214411768955116",
+  "ASANA": "https://app.asana.com/1/41091308892039/project/1202289964354061/task/1214411768955116",
   "permalink": "https://app.asana.com/1/41091308892039/project/1202289964354061/task/1214411768955116",
   "fired_at": "2026-04-30T12:43:34.123Z",
   "trigger": { "field": "Assessment System", "value": "New" },

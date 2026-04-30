@@ -178,6 +178,7 @@ async function processTask(taskGid: string, env: Env): Promise<void> {
   const outbound: OutboundPayload = {
     source: 'asana',
     task_gid: taskGid,
+    ASANA: task.permalink_url ?? null,
     permalink: task.permalink_url ?? null,
     fired_at: new Date().toISOString(),
     trigger: { field: env.TRIGGER_FIELD_NAME, value: env.TRIGGER_FIELD_VALUE },

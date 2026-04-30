@@ -108,6 +108,7 @@ export interface OutboundItem {
 export type OutboundPayload = OutboundFields & {
   source: 'asana';
   task_gid: string;
+  ASANA: string | null;
   permalink: string | null;
   fired_at: string;
   trigger: { field: string; value: string };
