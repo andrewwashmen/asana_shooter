@@ -182,7 +182,6 @@ async function processTask(taskGid: string, env: Env): Promise<void> {
     permalink: task.permalink_url ?? null,
     fired_at: new Date().toISOString(),
     trigger: { field: env.TRIGGER_FIELD_NAME, value: env.TRIGGER_FIELD_VALUE },
-    order_id: fields.order_id,
     items,
     ...fields,
   };
