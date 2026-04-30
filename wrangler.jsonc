@@ -26,6 +26,7 @@
 	// Secrets (set with `wrangler secret put <NAME>`):
 	//   ASANA_PAT               - Personal Access Token from Asana developer console
 	//   DESTINATION_WEBHOOK_URL - Where to POST the enriched task payload
+	//   CALLBACK_SECRET         - Bearer token Lovable sends on POST /lovable-callback
 	"observability": {
 		"enabled": true
 	}

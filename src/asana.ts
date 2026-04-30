@@ -74,6 +74,38 @@ export async function fetchTask(taskGid: string, env: Env): Promise<AsanaTask> {
   return data.data;
 }
 
+export async function fetchTaskNotes(taskGid: string, env: Env): Promise<string> {
+  const url = `${ASANA_BASE}/tasks/${encodeURIComponent(taskGid)}?opt_fields=notes`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${env.ASANA_PAT}` },
+  });
+  if (!res.ok) {
+    throw new Error(`Asana fetchTaskNotes ${taskGid} failed: ${res.status} ${await res.text()}`);
+  }
+  const data = (await res.json()) as { data: { notes?: string } };
+  return data.data.notes ?? '';
+}
+
+export async function updateTaskNotes(
+  taskGid: string,
+  notes: string,
+  env: Env,
+): Promise<void> {
+  const url = `${ASANA_BASE}/tasks/${encodeURIComponent(taskGid)}`;
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${env.ASANA_PAT}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({ data: { notes } }),
+  });
+  if (!res.ok) {
+    throw new Error(`Asana updateTaskNotes ${taskGid} failed: ${res.status} ${await res.text()}`);
+  }
+}
+
 export async function listAttachments(taskGid: string, env: Env): Promise<AsanaAttachment[]> {
   const all: AsanaAttachment[] = [];
   let offset: string | null = null;

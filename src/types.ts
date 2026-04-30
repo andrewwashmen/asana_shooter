@@ -7,6 +7,7 @@ export interface Env {
   TRIGGER_FIELD_NAME: string;
   TRIGGER_FIELD_VALUE: string;
   R2_PUBLIC_BASE_URL: string;
+  CALLBACK_SECRET: string;
 }
 
 export interface AsanaEvent {

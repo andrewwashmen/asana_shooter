@@ -200,7 +200,48 @@
   <li>Task name segment 5 may contain either <code class="inline">"Size: 44 EU"</code> (older format) or just <code class="inline">"44 EU"</code> (newer format). The parser handles both. If neither is present in the name, <code class="inline">shoe_size</code> falls back to the notes <code class="inline">Size:</code> label.</li>
 </ul>
 
-<div class="footer">Generated 2026-04-30 · Source: <code class="inline">src/types.ts</code> + <code class="inline">src/transform.ts</code> in the <code class="inline">asana-shooter</code> repo.</div>
+<h2>10. Callback endpoint (Lovable → Worker)</h2>
+<p>After processing, Lovable POSTs back to the Worker so the approval URL can be appended to the Asana task's description.</p>
+
+<table>
+  <tr><td class="field">Method</td><td>POST</td></tr>
+  <tr><td class="field">URL</td><td><code class="inline">https://asana-shooter.washmen-egolf.workers.dev/lovable-callback</code></td></tr>
+  <tr><td class="field">Authorization</td><td><code class="inline">Bearer &lt;CALLBACK_SECRET&gt;</code> (shared secret; ask the Worker operator)</td></tr>
+  <tr><td class="field">Content-Type</td><td><code class="inline">application/json</code></td></tr>
+</table>
+
+<h3>Request body</h3>
+<pre>{
+  "task_gid":     "1214429954181947",
+  "approval_url": "https://service-wizard-kit.lovable.app/approved/f7680eeb-3deb-493f-86a1-4d361a9d5038"
+}</pre>
+
+<table>
+  <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr class="required"><td class="field">task_gid</td><td class="type">string (digits)</td><td>Asana task identifier. Echo back the value Lovable received in the original payload (<code class="inline">task_gid</code>).</td></tr>
+    <tr class="required"><td class="field">approval_url</td><td class="type">string (https URL)</td><td>The Lovable approval link to surface on the Asana task.</td></tr>
+  </tbody>
+</table>
+
+<h3>Responses</h3>
+<table>
+  <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code class="inline">202</code></td><td>Accepted; the Worker queued the Asana update. Idempotent — re-posting the same URL is a no-op.</td></tr>
+    <tr><td><code class="inline">400</code></td><td>Missing or malformed body (invalid JSON, missing fields, non-https URL, non-numeric task_gid).</td></tr>
+    <tr><td><code class="inline">401</code></td><td>Missing or wrong <code class="inline">Authorization</code> header.</td></tr>
+  </tbody>
+</table>
+
+<h3>What the Worker does on success</h3>
+<ol>
+  <li>Fetches the current task notes from Asana.</li>
+  <li>If the URL is already in the notes, exits (idempotent).</li>
+  <li>Otherwise appends a line: <code class="inline">Customer approval response: &lt;approval_url&gt;</code> to the description and PUTs the updated notes back to Asana.</li>
+</ol>
+
+<div class="footer">Generated 2026-04-30 · Source: <code class="inline">src/types.ts</code> + <code class="inline">src/transform.ts</code> + <code class="inline">src/index.ts</code> in the <code class="inline">asana-shooter</code> repo.</div>
 
 </body>
 </html>

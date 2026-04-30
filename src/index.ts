@@ -1,4 +1,9 @@
-import { fetchTask, listAttachments } from './asana';
+import {
+  fetchTask,
+  fetchTaskNotes,
+  listAttachments,
+  updateTaskNotes,
+} from './asana';
 import { rehostAttachments } from './rehost';
 import { buildItems, buildOutboundFields } from './transform';
 import type {
@@ -9,6 +14,7 @@ import type {
 } from './types';
 
 const WEBHOOK_PATH = '/asana-webhook';
+const CALLBACK_PATH = '/lovable-callback';
 const SECRET_KV_KEY = 'webhook_secret';
 const STATE_KEY_TTL_SECONDS = 90 * 24 * 60 * 60; // 90 days
 const HMAC_HEX_LENGTH = 64; // SHA-256 produces 32 bytes = 64 hex chars
@@ -23,6 +29,10 @@ export default {
 
     if (request.method === 'POST' && url.pathname === WEBHOOK_PATH) {
       return handleAsanaWebhook(request, env, ctx);
+    }
+
+    if (request.method === 'POST' && url.pathname === CALLBACK_PATH) {
+      return handleLovableCallback(request, env, ctx);
     }
 
     return new Response('Not found', { status: 404 });
@@ -82,6 +92,77 @@ async function handleAsanaWebhook(
   // immediately and process events asynchronously.
   ctx.waitUntil(processEvents(events, env));
   return new Response(null, { status: 200 });
+}
+
+async function handleLovableCallback(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<Response> {
+  const auth = request.headers.get('Authorization');
+  const expected = `Bearer ${env.CALLBACK_SECRET}`;
+  if (!auth || !constantTimeStringEqual(auth, expected)) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  let payload: { task_gid?: unknown; approval_url?: unknown };
+  try {
+    payload = (await request.json()) as typeof payload;
+  } catch {
+    return new Response('Invalid JSON', { status: 400 });
+  }
+
+  const taskGid = typeof payload.task_gid === 'string' ? payload.task_gid.trim() : '';
+  const approvalUrl =
+    typeof payload.approval_url === 'string' ? payload.approval_url.trim() : '';
+
+  if (!taskGid || !approvalUrl) {
+    return new Response('Missing task_gid or approval_url', { status: 400 });
+  }
+  if (!/^\d+$/.test(taskGid)) {
+    return new Response('Invalid task_gid', { status: 400 });
+  }
+  try {
+    const u = new URL(approvalUrl);
+    if (u.protocol !== 'https:') {
+      return new Response('approval_url must be https', { status: 400 });
+    }
+  } catch {
+    return new Response('Invalid approval_url', { status: 400 });
+  }
+
+  ctx.waitUntil(appendApprovalLink(taskGid, approvalUrl, env));
+  return new Response(null, { status: 202 });
+}
+
+async function appendApprovalLink(
+  taskGid: string,
+  approvalUrl: string,
+  env: Env,
+): Promise<void> {
+  try {
+    const currentNotes = await fetchTaskNotes(taskGid, env);
+    if (currentNotes.includes(approvalUrl)) {
+      // Idempotent: Lovable retried, link already present.
+      return;
+    }
+    const newNotes = `${currentNotes}\n\nCustomer approval response: ${approvalUrl}`;
+    await updateTaskNotes(taskGid, newNotes, env);
+  } catch (err) {
+    console.error('appendApprovalLink failed', {
+      taskGid,
+      error: err instanceof Error ? { message: err.message, stack: err.stack } : String(err),
+    });
+  }
+}
+
+function constantTimeStringEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
 }
 
 async function verifyHmac(secret: string, body: string, signatureHex: string): Promise<boolean> {
