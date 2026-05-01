@@ -29,5 +29,11 @@
 	//   CALLBACK_SECRET         - Bearer token Lovable sends on POST /lovable-callback
 	"observability": {
 		"enabled": true
-	}
+	},
+	// Bundle .wasm imports as compiled WebAssembly modules. Required by
+	// @jsquash/jpeg + @jsquash/resize, which ship .wasm files in their
+	// codec directories.
+	"rules": [
+		{ "type": "CompiledWasm", "globs": ["**/*.wasm"], "fallthrough": true }
+	]
 }

@@ -1,3 +1,4 @@
+import { compressJpeg, isJpegMagic } from './compress';
 import type { AsanaAttachment, Env, RehostedAttachment } from './types';
 
 // Only rehost from these hosts. Asana attachments with `host !== 'asana'`
@@ -5,8 +6,16 @@ import type { AsanaAttachment, Env, RehostedAttachment } from './types';
 // to avoid SSRF and to avoid storing third-party content we have no rights to.
 const ALLOWED_HOSTS: readonly string[] = ['asanausercontent.com'];
 const MAX_REHOST_BYTES = 100 * 1024 * 1024; // 100 MB
+// Files larger than this stream-pass-through unchanged. Buffering big files
+// for compression risks OOM (decoded RGBA can be 5-10× the JPEG size).
+const MAX_COMPRESS_BYTES = 20 * 1024 * 1024; // 20 MB
 const DOWNLOAD_TIMEOUT_MS = 30_000;
-const REHOST_CONCURRENCY = 6;
+// Lowered from 6 because the compression path buffers per-image. A 12 MP
+// phone photo decodes to ~49 MB of RGBA pixels; two parallel decodes plus
+// resize/encode scratch can spike past the 128 MB Worker memory ceiling.
+// Serializing rehosts trades a few seconds of latency (the work runs in
+// ctx.waitUntil so it doesn't affect webhook ack) for safe memory bounds.
+const REHOST_CONCURRENCY = 1;
 
 export async function rehostAttachments(
   attachments: AsanaAttachment[],
@@ -62,11 +71,49 @@ async function rehostOne(
     .replace(/\.{2,}/g, '_');
   const key = `tasks/${taskGid}/${att.gid}/${safeName}`;
 
+  const contentType = res.headers.get('content-type') ?? 'application/octet-stream';
+
+  // Compression path: only for content-typed-as-JPEG inputs under the buffer
+  // cap. Anything else streams through unchanged (current behavior).
+  const sizeKnown = typeof att.size === 'number' ? att.size : null;
+  const eligibleForCompression =
+    contentType.toLowerCase().startsWith('image/jpeg') &&
+    (sizeKnown === null || sizeKnown <= MAX_COMPRESS_BYTES);
+
+  let body: ReadableStream | Uint8Array = res.body;
+
+  if (eligibleForCompression) {
+    try {
+      const ab = await res.arrayBuffer();
+      if (ab.byteLength > MAX_REHOST_BYTES) {
+        return fail(att, `buffered body ${ab.byteLength} exceeds cap ${MAX_REHOST_BYTES}`);
+      }
+      if (ab.byteLength > MAX_COMPRESS_BYTES) {
+        // size header was missing or lied — already paid for the buffer, so
+        // upload raw rather than re-fetching as a stream.
+        body = new Uint8Array(ab);
+        logSkip(taskGid, att.gid, att.name ?? null, 'skipped_oversize', ab.byteLength);
+      } else {
+        const buffered = new Uint8Array(ab);
+        if (!isJpegMagic(buffered)) {
+          // content-type said JPEG but magic bytes disagree (e.g. PNG with
+          // wrong header). Pass through the bytes as-is.
+          body = buffered;
+          logSkip(taskGid, att.gid, att.name ?? null, 'skipped_bad_magic', buffered.byteLength);
+        } else {
+          const result = await compressJpeg(buffered);
+          logCompression(taskGid, att.gid, att.name ?? null, result.meta);
+          body = result.bytes;
+        }
+      }
+    } catch (err) {
+      return fail(att, `buffer/compress failed: ${String(err)}`);
+    }
+  }
+
   try {
-    await env.PHOTOS.put(key, res.body, {
-      httpMetadata: {
-        contentType: res.headers.get('content-type') ?? 'application/octet-stream',
-      },
+    await env.PHOTOS.put(key, body, {
+      httpMetadata: { contentType },
       customMetadata: {
         asana_attachment_gid: att.gid,
         asana_task_gid: taskGid,
@@ -83,6 +130,44 @@ async function rehostOne(
     rehost_error: null,
     r2_key: key,
   };
+}
+
+function logCompression(
+  taskGid: string,
+  attGid: string,
+  name: string | null,
+  meta: import('./compress').CompressMeta,
+): void {
+  console.log(
+    JSON.stringify({
+      msg: 'rehost.compress',
+      task_gid: taskGid,
+      attachment_gid: attGid,
+      name,
+      ...meta,
+      ratio: meta.orig_bytes > 0 ? meta.final_bytes / meta.orig_bytes : null,
+    }),
+  );
+}
+
+function logSkip(
+  taskGid: string,
+  attGid: string,
+  name: string | null,
+  path: 'skipped_oversize' | 'skipped_bad_magic',
+  bytes: number,
+): void {
+  console.log(
+    JSON.stringify({
+      msg: 'rehost.compress',
+      task_gid: taskGid,
+      attachment_gid: attGid,
+      name,
+      path,
+      orig_bytes: bytes,
+      final_bytes: bytes,
+    }),
+  );
 }
 
 function fail(att: AsanaAttachment, reason: string): RehostedAttachment {
