@@ -85,6 +85,7 @@
     <tr><td class="field">fired_at</td><td class="type">string (ISO-8601)</td><td class="example">"2026-04-30T12:43:34.123Z"</td><td>UTC timestamp the Worker emitted the POST.</td></tr>
     <tr><td class="field">trigger</td><td class="type">object</td><td class="example">{ "field": "Assessment System", "value": "New" }</td><td>Static identifier of what triggered the payload.</td></tr>
     <tr class="required"><td class="field">order_id</td><td class="type">string | null</td><td class="example">"CVZ472"</td><td>Order alpha ID, parsed from task name segment 1.</td></tr>
+    <tr><td class="field">customer_alpha_id</td><td class="type">string | null</td><td class="example">"IY70GB"</td><td>Customer alpha ID. Parsed from task notes (<code class="inline">Customer Alpha ID:</code>).</td></tr>
     <tr class="required"><td class="field">items</td><td class="type">Item[] (length 1)</td><td class="example">see Section 4</td><td>One item per Asana task.</td></tr>
     <tr><td class="field">geofence</td><td class="type">string | null</td><td class="example">"Downtown (NEW - No City Walk)"</td><td>Text inside the first <code class="inline">[...]</code> in the task name.</td></tr>
     <tr><td class="field">pickup_date</td><td class="type">string | null (YYYY-MM-DD)</td><td class="example">"2026-04-29"</td><td>Parsed from task notes (<code class="inline">Pickup Date:</code>).</td></tr>
@@ -134,6 +135,7 @@
   "fired_at": "2026-04-30T12:43:34.123Z",
   "trigger": { "field": "Assessment System", "value": "New" },
   "order_id": "CVZ472",
+  "customer_alpha_id": "IY70GB",
   "items": [
     {
       "brand": "Hermes",
@@ -173,6 +175,7 @@
   <thead><tr><th>Payload key</th><th>Source</th></tr></thead>
   <tbody>
     <tr><td class="field">order_id</td><td>Task name, segment 1 after <code class="inline">[geofence]</code></td></tr>
+    <tr><td class="field">customer_alpha_id</td><td>Task notes, line under <code class="inline">Customer Alpha ID:</code></td></tr>
     <tr><td class="field">items[0].brand</td><td>Task name, segment 2</td></tr>
     <tr><td class="field">items[0].color</td><td>Task name, segment 5</td></tr>
     <tr><td class="field">items[0].item_code</td><td>Task notes, line under <code class="inline">Item Code:</code></td></tr>
@@ -241,7 +244,7 @@
   <li>Otherwise appends a line: <code class="inline">Customer approval response: &lt;approval_url&gt;</code> to the description and PUTs the updated notes back to Asana.</li>
 </ol>
 
-<div class="footer">Generated 2026-04-30 · Source: <code class="inline">src/types.ts</code> + <code class="inline">src/transform.ts</code> + <code class="inline">src/index.ts</code> in the <code class="inline">asana-shooter</code> repo.</div>
+<div class="footer">Generated 2026-05-01 · Source: <code class="inline">src/types.ts</code> + <code class="inline">src/transform.ts</code> + <code class="inline">src/index.ts</code> in the <code class="inline">asana-shooter</code> repo.</div>
 
 </body>
 </html>
