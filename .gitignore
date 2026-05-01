@@ -7,8 +7,9 @@ node_modules/
 .DS_Store
 dist/
 
-# Local test fixture with real customer data — do not commit
+# Local fixtures and regenerated payloads with real customer data — do not commit
 sample-payload.json
+*-payload.json
 
 # Per-machine Claude Code permissions
 .claude/settings.local.json
