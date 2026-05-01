@@ -3,6 +3,7 @@
 	"name": "asana-shooter",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-04-24",
+	"account_id": "6fc32d61de714e8677282bf972decbe2",
 	// KV stores: X-Hook-Secret per webhook + per-task edge-trigger state.
 	"kv_namespaces": [
 		{
@@ -17,6 +18,12 @@
 			"bucket_name": "asana-shooter-photos"
 		}
 	],
+	// Cloudflare Browser Rendering — used by /lovable-callback to extract
+	// per-service and stains/damages photos from the Service Wizard page.
+	// Initialised lazily on demand; does not affect /asana-webhook.
+	"browser": {
+		"binding": "BROWSER"
+	},
 	"vars": {
 		"ASANA_PROJECT_GID": "1202289964354061",
 		"TRIGGER_FIELD_NAME": "Assessment System",

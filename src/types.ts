@@ -1,6 +1,7 @@
 export interface Env {
   STATE: KVNamespace;
   PHOTOS: R2Bucket;
+  BROWSER: Fetcher;
   ASANA_PAT: string;
   DESTINATION_WEBHOOK_URL: string;
   ASANA_PROJECT_GID: string;
