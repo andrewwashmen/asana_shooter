@@ -28,9 +28,8 @@ export interface ApprovalPhotos {
   stainsPhotos: string[];
 }
 
-const NAV_TIMEOUT_MS = 20_000;
-const POST_LOAD_SETTLE_MS = 1_500;
-const PER_PHOTO_FETCH_TIMEOUT_MS = 15_000;
+const NAV_TIMEOUT_MS = 12_000;
+const PER_PHOTO_FETCH_TIMEOUT_MS = 8_000;
 const MAX_PHOTO_BYTES = 25 * 1024 * 1024; // 25MB hard cap per file
 
 /**
@@ -40,10 +39,9 @@ export async function extractApprovalPhotos(url: string, env: Env): Promise<Appr
   const browser = await puppeteer.launch(env.BROWSER);
   try {
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'networkidle0', timeout: NAV_TIMEOUT_MS });
-
-    // Brief settle so any final lazy-loaded images resolve.
-    await new Promise((resolve) => setTimeout(resolve, POST_LOAD_SETTLE_MS));
+    // 'domcontentloaded' returns once the main HTML has parsed; much faster
+    // than 'networkidle0' which can hang on long-tail XHR or analytics calls.
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
 
     // The callback runs in the browser context, where document/Element/etc.
     // exist. The Worker's tsconfig doesn't include the DOM lib (and adding it
@@ -189,48 +187,52 @@ export async function attachPhotosToTask(
 ): Promise<{ uploaded: number; failed: number }> {
   const photos = await extractApprovalPhotos(approvalUrl, env);
 
-  let uploaded = 0;
-  let failed = 0;
+  // Build all upload jobs upfront, then run in parallel. This keeps wall time
+  // bounded by the slowest single fetch+upload rather than the sum.
+  type Job = { kind: 'service' | 'stain'; filename: string; url: string };
+  const jobs: Job[] = [];
 
-  // Service photos
   for (const { serviceName, imageUrl } of photos.servicePhotos) {
-    try {
-      const { blob, contentType } = await fetchPhoto(imageUrl);
-      const ext = guessExtension(contentType, imageUrl);
-      const filename = `${safeFilename(serviceName, 'service')}${ext}`;
-      const typed = new Blob([await blob.arrayBuffer()], { type: contentType });
-      await uploadAttachment(taskGid, filename, typed, env);
-      uploaded++;
-    } catch (err) {
-      failed++;
-      console.warn('servicePhoto upload failed', {
-        taskGid,
-        serviceName,
-        imageUrl,
-        error: err instanceof Error ? err.message : String(err),
-      });
-    }
+    jobs.push({
+      kind: 'service',
+      filename: `${safeFilename(serviceName, 'service')}.tmp`,
+      url: imageUrl,
+    });
   }
-
-  // Stains photos
   let stainIdx = 1;
   for (const imageUrl of photos.stainsPhotos) {
-    try {
-      const { blob, contentType } = await fetchPhoto(imageUrl);
-      const ext = guessExtension(contentType, imageUrl);
-      const filename = `Stain-${stainIdx}${ext}`;
+    jobs.push({ kind: 'stain', filename: `Stain-${stainIdx}.tmp`, url: imageUrl });
+    stainIdx++;
+  }
+
+  const results = await Promise.allSettled(
+    jobs.map(async (job) => {
+      const { blob, contentType } = await fetchPhoto(job.url);
+      const ext = guessExtension(contentType, job.url);
+      // Replace the .tmp placeholder with the real extension now that we have it
+      const finalName = job.filename.replace(/\.tmp$/, ext);
       const typed = new Blob([await blob.arrayBuffer()], { type: contentType });
-      await uploadAttachment(taskGid, filename, typed, env);
+      await uploadAttachment(taskGid, finalName, typed, env);
+    }),
+  );
+
+  let uploaded = 0;
+  let failed = 0;
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i]!;
+    const job = jobs[i]!;
+    if (r.status === 'fulfilled') {
       uploaded++;
-    } catch (err) {
+    } else {
       failed++;
-      console.warn('stainPhoto upload failed', {
+      console.warn('photo upload failed', {
         taskGid,
-        imageUrl,
-        error: err instanceof Error ? err.message : String(err),
+        kind: job.kind,
+        filename: job.filename,
+        url: job.url,
+        error: r.reason instanceof Error ? r.reason.message : String(r.reason),
       });
     }
-    stainIdx++;
   }
 
   return { uploaded, failed };
