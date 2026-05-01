@@ -94,6 +94,7 @@ const result = {
   customer_alpha_id: extractLabelled(task.notes, 'Customer Alpha ID'),
   item_type: extractLabelled(task.notes, 'Item Type'),
   originapp: extractLabelled(task.notes, 'Origin App'),
+  servicelinevalue: extractLabelled(task.notes, 'Service Line Value'),
   geofence: parsed.geofence,
   pickup_date: extractLabelled(task.notes, 'Pickup Date'),
   brand: parsed.brand,

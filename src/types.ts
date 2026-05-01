@@ -85,6 +85,7 @@ export interface OutboundFields {
   customer_alpha_id: string | null;
   item_type: string | null;
   originapp: string | null;
+  servicelinevalue: string | null;
   pickup_date: string | null;
   brand: string | null;
   color: string | null;

@@ -33,6 +33,7 @@ export function buildOutboundFields(
     customer_alpha_id: extractLabelled(notes, 'Customer Alpha ID'),
     item_type: extractLabelled(notes, 'Item Type'),
     originapp: extractLabelled(notes, 'Origin App'),
+    servicelinevalue: extractLabelled(notes, 'Service Line Value'),
     pickup_date: extractLabelled(notes, 'Pickup Date'),
     brand: parsedName.brand,
     color: parsedName.color,
