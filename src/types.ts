@@ -82,6 +82,7 @@ export interface CustomerInstructions {
 export interface OutboundFields {
   geofence: string | null;
   order_id: string | null;
+  customer_alpha_id: string | null;
   pickup_date: string | null;
   brand: string | null;
   color: string | null;

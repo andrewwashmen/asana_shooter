@@ -55,6 +55,7 @@ export function buildOutboundFields(
   return {
     geofence: parsedName.geofence,
     order_id: parsedName.orderId ?? extractLabelled(notes, 'Order Alpha ID'),
+    customer_alpha_id: extractLabelled(notes, 'Customer Alpha ID'),
     pickup_date: extractLabelled(notes, 'Pickup Date'),
     brand: parsedName.brand,
     color: parsedName.color,
