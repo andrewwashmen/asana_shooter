@@ -106,6 +106,28 @@ export async function updateTaskNotes(
   }
 }
 
+export async function uploadAttachment(
+  taskGid: string,
+  filename: string,
+  blob: Blob,
+  env: Env,
+): Promise<void> {
+  const form = new FormData();
+  form.append('parent', taskGid);
+  form.append('file', blob, filename);
+
+  const res = await fetch(`${ASANA_BASE}/attachments`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.ASANA_PAT}` },
+    body: form,
+  });
+  if (!res.ok) {
+    throw new Error(
+      `Asana uploadAttachment ${taskGid} (${filename}) failed: ${res.status} ${await res.text()}`,
+    );
+  }
+}
+
 export async function listAttachments(taskGid: string, env: Env): Promise<AsanaAttachment[]> {
   const all: AsanaAttachment[] = [];
   let offset: string | null = null;

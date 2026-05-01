@@ -5,6 +5,7 @@ import {
   updateTaskNotes,
 } from './asana';
 import { rehostAttachments } from './rehost';
+import { attachPhotosToTask } from './render';
 import { buildOutboundFields } from './transform';
 import type {
   AsanaEvent,
@@ -131,8 +132,40 @@ async function handleLovableCallback(
     return new Response('Invalid approval_url', { status: 400 });
   }
 
-  ctx.waitUntil(appendApprovalLink(taskGid, approvalUrl, env));
+  ctx.waitUntil(handleApprovalCallback(taskGid, approvalUrl, env));
   return new Response(null, { status: 202 });
+}
+
+/**
+ * Background handler for /lovable-callback. Two strictly-ordered steps:
+ *
+ *   1. appendApprovalLink — primary side-effect, must always run.
+ *   2. attachPhotosToTask — photo capture via Browser Rendering. Wrapped in
+ *      try/catch so any failure (rendering down, page change, fetch error)
+ *      logs a warning but does not affect step 1 or the response to Lovable.
+ *
+ * Lovable receives 202 BEFORE either step starts (ctx.waitUntil), so this
+ * adds zero latency to the user-facing flow.
+ */
+async function handleApprovalCallback(
+  taskGid: string,
+  approvalUrl: string,
+  env: Env,
+): Promise<void> {
+  await appendApprovalLink(taskGid, approvalUrl, env);
+
+  try {
+    const result = await attachPhotosToTask(taskGid, approvalUrl, env);
+    if (result.uploaded > 0 || result.failed > 0) {
+      console.log('attachPhotosToTask completed', { taskGid, ...result });
+    }
+  } catch (err) {
+    console.warn('attachPhotosToTask failed (non-fatal)', {
+      taskGid,
+      approvalUrl,
+      error: err instanceof Error ? { message: err.message, stack: err.stack } : String(err),
+    });
+  }
 }
 
 async function appendApprovalLink(
