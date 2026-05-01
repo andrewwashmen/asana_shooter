@@ -10,7 +10,8 @@
     "register-webhook": "node scripts/register-webhook.mjs",
     "list-webhooks": "node scripts/list-webhooks.mjs",
     "delete-webhook": "node scripts/delete-webhook.mjs",
-    "test-callback": "node scripts/test-callback.mjs"
+    "test-callback": "node scripts/test-callback.mjs",
+    "regenerate-payload": "node scripts/regenerate-payload.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260101.0",
