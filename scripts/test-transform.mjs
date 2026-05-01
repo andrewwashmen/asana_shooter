@@ -81,13 +81,6 @@ function extractCustomerInstructions(notes) {
   };
 }
 
-const SERVICE_TYPE_MAP = { ShoeCare: 'Shoes', BagCare: 'Bags' };
-const serviceTypeField = task.custom_fields?.find(
-  (f) => (f.name ?? '').trim() === 'SERVICE TYPE',
-);
-const rawServiceType = serviceTypeField?.enum_value?.name?.trim() ?? null;
-const itemType = rawServiceType ? (SERVICE_TYPE_MAP[rawServiceType] ?? rawServiceType) : null;
-
 const orderId = parsed.orderId ?? extractLabelled(task.notes, 'Order Alpha ID');
 const itemCode = extractLabelled(task.notes, 'Item Code');
 
@@ -98,14 +91,9 @@ const result = {
   fired_at: new Date().toISOString(),
   trigger: { field: 'Assessment System', value: 'New' },
   order_id: orderId,
-  items: [
-    {
-      brand: parsed.brand,
-      color: parsed.color,
-      item_code: itemCode,
-      item_type: itemType,
-    },
-  ],
+  customer_alpha_id: extractLabelled(task.notes, 'Customer Alpha ID'),
+  item_type: extractLabelled(task.notes, 'Item Type'),
+  originapp: extractLabelled(task.notes, 'Origin App'),
   geofence: parsed.geofence,
   pickup_date: extractLabelled(task.notes, 'Pickup Date'),
   brand: parsed.brand,
@@ -116,8 +104,8 @@ const result = {
   stain_details: extractLabelled(task.notes, 'Stain Details'),
   damage_details: extractLabelled(task.notes, 'Damage Details'),
   customer_instructions: extractCustomerInstructions(task.notes),
-  email: null, // would come from washmen api in production
-  tel: null,
+  email: extractLabelled(task.notes, 'Customer Email'),
+  tel: extractLabelled(task.notes, 'Customer Phone'),
   tray_number: parsed.trayNumber ?? extractLabelled(task.notes, 'Tray Number'),
   item_code: itemCode,
   ...(() => {

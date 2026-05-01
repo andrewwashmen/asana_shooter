@@ -2,33 +2,8 @@ import type {
   AsanaTask,
   CustomerInstructions,
   OutboundFields,
-  OutboundItem,
   RehostedAttachment,
 } from './types';
-
-const SERVICE_TYPE_TO_ITEM_TYPE: Record<string, string> = {
-  ShoeCare: 'Shoes',
-  BagCare: 'Bags',
-};
-
-export function buildItems(task: AsanaTask, fields: OutboundFields): OutboundItem[] {
-  const serviceTypeField = task.custom_fields?.find(
-    (f) => (f.name ?? '').trim() === 'SERVICE TYPE',
-  );
-  const rawServiceType = serviceTypeField?.enum_value?.name?.trim() ?? null;
-  const itemType = rawServiceType
-    ? (SERVICE_TYPE_TO_ITEM_TYPE[rawServiceType] ?? rawServiceType)
-    : null;
-
-  return [
-    {
-      brand: fields.brand,
-      color: fields.color,
-      item_code: fields.item_code,
-      item_type: itemType,
-    },
-  ];
-}
 
 // Task name template (Washmen Bot):
 //   "Tray: 3088 || [JLT + Gardens] CVZ439 - Louis Vuitton - 1/1 - Malicah Eissa - Beige/Light Purple/White - Size: Check Attachments  - Bag Number: 1/1 [STORE]"
@@ -56,6 +31,8 @@ export function buildOutboundFields(
     geofence: parsedName.geofence,
     order_id: parsedName.orderId ?? extractLabelled(notes, 'Order Alpha ID'),
     customer_alpha_id: extractLabelled(notes, 'Customer Alpha ID'),
+    item_type: extractLabelled(notes, 'Item Type'),
+    originapp: extractLabelled(notes, 'Origin App'),
     pickup_date: extractLabelled(notes, 'Pickup Date'),
     brand: parsedName.brand,
     color: parsedName.color,

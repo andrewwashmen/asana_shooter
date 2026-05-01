@@ -83,6 +83,8 @@ export interface OutboundFields {
   geofence: string | null;
   order_id: string | null;
   customer_alpha_id: string | null;
+  item_type: string | null;
+  originapp: string | null;
   pickup_date: string | null;
   brand: string | null;
   color: string | null;
@@ -100,13 +102,6 @@ export interface OutboundFields {
   other_images_links: string[];
 }
 
-export interface OutboundItem {
-  brand: string | null;
-  color: string | null;
-  item_code: string | null;
-  item_type: string | null;
-}
-
 export type OutboundPayload = OutboundFields & {
   source: 'asana';
   task_gid: string;
@@ -115,5 +110,4 @@ export type OutboundPayload = OutboundFields & {
   fired_at: string;
   trigger: { field: string; value: string };
   order_id: string | null;
-  items: OutboundItem[];
 };

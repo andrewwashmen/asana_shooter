@@ -5,7 +5,7 @@ import {
   updateTaskNotes,
 } from './asana';
 import { rehostAttachments } from './rehost';
-import { buildItems, buildOutboundFields } from './transform';
+import { buildOutboundFields } from './transform';
 import type {
   AsanaEvent,
   AsanaWebhookPayload,
@@ -254,7 +254,6 @@ async function processTask(taskGid: string, env: Env): Promise<void> {
   const attachments = await listAttachments(taskGid, env);
   const rehosted = await rehostAttachments(attachments, taskGid, env);
   const fields = buildOutboundFields(task, rehosted);
-  const items = buildItems(task, fields);
 
   const outbound: OutboundPayload = {
     source: 'asana',
@@ -263,7 +262,6 @@ async function processTask(taskGid: string, env: Env): Promise<void> {
     permalink: task.permalink_url ?? null,
     fired_at: new Date().toISOString(),
     trigger: { field: env.TRIGGER_FIELD_NAME, value: env.TRIGGER_FIELD_VALUE },
-    items,
     ...fields,
   };
 

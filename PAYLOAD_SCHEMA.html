@@ -86,11 +86,12 @@
     <tr><td class="field">trigger</td><td class="type">object</td><td class="example">{ "field": "Assessment System", "value": "New" }</td><td>Static identifier of what triggered the payload.</td></tr>
     <tr class="required"><td class="field">order_id</td><td class="type">string | null</td><td class="example">"CVZ472"</td><td>Order alpha ID, parsed from task name segment 1.</td></tr>
     <tr><td class="field">customer_alpha_id</td><td class="type">string | null</td><td class="example">"IY70GB"</td><td>Customer alpha ID. Parsed from task notes (<code class="inline">Customer Alpha ID:</code>).</td></tr>
-    <tr class="required"><td class="field">items</td><td class="type">Item[] (length 1)</td><td class="example">see Section 4</td><td>One item per Asana task.</td></tr>
+    <tr><td class="field">item_type</td><td class="type">string | null</td><td class="example">"ESPADRILLES"</td><td>Free-text item type from task notes (<code class="inline">Item Type:</code>).</td></tr>
+    <tr><td class="field">originapp</td><td class="type">string | null</td><td class="example">"MOBILE_APP"</td><td>Origin app, from task notes (<code class="inline">Origin App:</code>).</td></tr>
     <tr><td class="field">geofence</td><td class="type">string | null</td><td class="example">"Downtown (NEW - No City Walk)"</td><td>Text inside the first <code class="inline">[...]</code> in the task name.</td></tr>
     <tr><td class="field">pickup_date</td><td class="type">string | null (YYYY-MM-DD)</td><td class="example">"2026-04-29"</td><td>Parsed from task notes (<code class="inline">Pickup Date:</code>).</td></tr>
-    <tr><td class="field">brand</td><td class="type">string | null</td><td class="example">"Hermes"</td><td>Mirror of <code class="inline">items[0].brand</code>.</td></tr>
-    <tr><td class="field">color</td><td class="type">string | null</td><td class="example">"Beige"</td><td>Mirror of <code class="inline">items[0].color</code>.</td></tr>
+    <tr><td class="field">brand</td><td class="type">string | null</td><td class="example">"Hermes"</td><td>From task name segment 2.</td></tr>
+    <tr><td class="field">color</td><td class="type">string | null</td><td class="example">"Beige"</td><td>From task name segment 5.</td></tr>
     <tr><td class="field">full_name</td><td class="type">string | null</td><td class="example">"Seif Motawe"</td><td>Customer full name from task name segment 4.</td></tr>
     <tr><td class="field">shoe_size</td><td class="type">string | null</td><td class="example">"41 EU"</td><td>Size from <code class="inline">Size: …</code> segment of task name.</td></tr>
     <tr><td class="field">notes</td><td class="type">string | null</td><td class="example">Full raw description text</td><td>Verbatim Asana <code class="inline">notes</code> field.</td></tr>
@@ -100,33 +101,24 @@
     <tr><td class="field">email</td><td class="type">string | null</td><td class="example">"bactem07@gmail.com"</td><td>From notes <code class="inline">Customer Email:</code>. Falls back to Washmen customer API if not present.</td></tr>
     <tr><td class="field">tel</td><td class="type">string | null</td><td class="example">"+971586862076"</td><td>From notes <code class="inline">Customer Phone:</code>. Falls back to Washmen customer API.</td></tr>
     <tr><td class="field">tray_number</td><td class="type">string | null</td><td class="example">"4707"</td><td>From task name <code class="inline">Tray: NNNN</code> prefix.</td></tr>
-    <tr><td class="field">item_code</td><td class="type">string | null</td><td class="example">"260418952286"</td><td>Mirror of <code class="inline">items[0].item_code</code>.</td></tr>
+    <tr><td class="field">item_code</td><td class="type">string | null</td><td class="example">"260418952286"</td><td>From task notes <code class="inline">Item Code:</code>.</td></tr>
     <tr><td class="field">before_images_links</td><td class="type">string[]</td><td class="example">["https://pub-...r2.dev/tasks/&lt;gid&gt;/&lt;att-gid&gt;/BEFORE-…jpeg"]</td><td>BEFORE-prefixed attachments, oldest→newest.</td></tr>
     <tr><td class="field">other_images_links</td><td class="type">string[]</td><td class="example">["https://pub-...r2.dev/tasks/.../Sorter-…jpeg", …]</td><td>All non-BEFORE attachments (Sorter, persisted, etc.), oldest→newest.</td></tr>
   </tbody>
 </table>
 
-<h2>4. Item schema (<code class="inline">items[]</code>)</h2>
-<pre>{
-  "brand":     string | null,    // "Hermes"
-  "color":     string | null,    // "Beige"
-  "item_code": string | null,    // "260418952286"
-  "item_type": string | null     // "Shoes" | "Bags"
-}</pre>
-<p><code class="inline">item_type</code> is derived from the Asana SERVICE TYPE custom field: <code class="inline">ShoeCare → "Shoes"</code>, <code class="inline">BagCare → "Bags"</code>. Other values pass through unchanged.</p>
-
-<h2>5. Customer instructions schema</h2>
+<h2>4. Customer instructions schema</h2>
 <pre>{
   "notes":           string | null,    // "None" → null
   "callback_status": string | null,    // e.g. "Not Requested"
   "images":          string | null
 }</pre>
 
-<h2>6. Photo URLs</h2>
+<h2>5. Photo URLs</h2>
 <p>Every link in <code class="inline">before_images_links</code> and <code class="inline">other_images_links</code> points to Cloudflare R2 at <code class="inline">https://pub-e253fc5bb5ec4740bf58f9cc062ed9b3.r2.dev</code>. URLs are permanent (no expiry) — unlike Asana's signed download URLs which expire after ~10 days.</p>
 <p>Path format: <code class="inline">/tasks/&lt;asana_task_gid&gt;/&lt;asana_attachment_gid&gt;/&lt;original_filename&gt;</code>. Filenames are sanitised (non-alphanumeric chars become <code class="inline">_</code>).</p>
 
-<h2>7. Sample full payload</h2>
+<h2>6. Sample full payload</h2>
 <pre>{
   "source": "asana",
   "task_gid": "1214411768955116",
@@ -136,14 +128,8 @@
   "trigger": { "field": "Assessment System", "value": "New" },
   "order_id": "CVZ472",
   "customer_alpha_id": "IY70GB",
-  "items": [
-    {
-      "brand": "Hermes",
-      "color": "Beige",
-      "item_code": "260418952286",
-      "item_type": "Shoes"
-    }
-  ],
+  "item_type": "ESPADRILLES",
+  "originapp": "MOBILE_APP",
   "geofence": "Downtown (NEW - No City Walk)",
   "pickup_date": "2026-04-29",
   "brand": "Hermes",
@@ -170,16 +156,14 @@
   ]
 }</pre>
 
-<h2>8. Field-origin reference</h2>
+<h2>7. Field-origin reference</h2>
 <table>
   <thead><tr><th>Payload key</th><th>Source</th></tr></thead>
   <tbody>
     <tr><td class="field">order_id</td><td>Task name, segment 1 after <code class="inline">[geofence]</code></td></tr>
     <tr><td class="field">customer_alpha_id</td><td>Task notes, line under <code class="inline">Customer Alpha ID:</code></td></tr>
-    <tr><td class="field">items[0].brand</td><td>Task name, segment 2</td></tr>
-    <tr><td class="field">items[0].color</td><td>Task name, segment 5</td></tr>
-    <tr><td class="field">items[0].item_code</td><td>Task notes, line under <code class="inline">Item Code:</code></td></tr>
-    <tr><td class="field">items[0].item_type</td><td>Custom field SERVICE TYPE, mapped</td></tr>
+    <tr><td class="field">item_type</td><td>Task notes, line under <code class="inline">Item Type:</code></td></tr>
+    <tr><td class="field">originapp</td><td>Task notes, line under <code class="inline">Origin App:</code></td></tr>
     <tr><td class="field">geofence</td><td>Task name, first <code class="inline">[…]</code></td></tr>
     <tr><td class="field">tray_number</td><td>Task name, <code class="inline">Tray: NNNN</code> prefix</td></tr>
     <tr><td class="field">full_name</td><td>Task name, segment 4</td></tr>
@@ -194,7 +178,7 @@
   </tbody>
 </table>
 
-<h2>9. Operational notes</h2>
+<h2>8. Operational notes</h2>
 <ul>
   <li>If validation on the destination function returns non-2xx, the Worker logs the error and the trigger state remains uncommitted in KV. The next Asana event for that task will retry the destination POST automatically.</li>
   <li>Photo URL format depends on R2 public access via <code class="inline">https://pub-e253fc5bb5ec4740bf58f9cc062ed9b3.r2.dev</code>. If you switch to a custom domain later, all <code class="inline">*_images_links</code> values change — coordinate with Lovable beforehand.</li>
@@ -203,7 +187,7 @@
   <li>Task name segment 5 may contain either <code class="inline">"Size: 44 EU"</code> (older format) or just <code class="inline">"44 EU"</code> (newer format). The parser handles both. If neither is present in the name, <code class="inline">shoe_size</code> falls back to the notes <code class="inline">Size:</code> label.</li>
 </ul>
 
-<h2>10. Callback endpoint (Lovable → Worker)</h2>
+<h2>9. Callback endpoint (Lovable → Worker)</h2>
 <p>After processing, Lovable POSTs back to the Worker so the approval URL can be appended to the Asana task's description.</p>
 
 <table>
@@ -244,7 +228,7 @@
   <li>Otherwise appends a line: <code class="inline">Customer approval response: &lt;approval_url&gt;</code> to the description and PUTs the updated notes back to Asana.</li>
 </ol>
 
-<div class="footer">Generated 2026-05-01 · Source: <code class="inline">src/types.ts</code> + <code class="inline">src/transform.ts</code> + <code class="inline">src/index.ts</code> in the <code class="inline">asana-shooter</code> repo.</div>
+<div class="footer">Generated 2026-05-01 · Source: <code class="inline">src/types.ts</code> + <code class="inline">src/transform.ts</code> + <code class="inline">src/index.ts</code> in the <code class="inline">asana-shooter</code> repo. v2 — added <code class="inline">item_type</code> and <code class="inline">originapp</code>; removed <code class="inline">items[]</code> array.</div>
 
 </body>
 </html>
